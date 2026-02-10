@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS OMAKASE | Architect Pro v4.0</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/yaml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/hcl.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            overflow: hidden;
+        }
+
+        /* Layout Grid */
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            height: calc(100vh - 56px);
+        }
+
+        .border-aws {
+            border-color: #30363d;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0d1117;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #58a6ff;
+        }
+
+        /* Left Panel - Interaction */
+        .option-group {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #21262d;
+        }
+
+        .group-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .option-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .option-card:hover {
+            border-color: #ec7211;
+            background: #1f242c;
+        }
+
+        .option-card.active {
+            background: #1f242c;
+            border: 1px solid #ec7211;
+            box-shadow: 0 0 0 1px #ec7211 inset;
+        }
+
+        .option-card.active .check-icon {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .option-card.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .check-icon {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 16px;
+            height: 16px;
+            background: #ec7211;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.2s;
+        }
+
+        /* Inputs */
+        .input-dark {
+            width: 100%;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        .input-dark:focus {
+            border-color: #ec7211;
+        }
+
+        .input-error {
+            border-color: #f85149 !important;
+        }
+
+        .err-msg {
+            color: #f85149;
+            font-size: 10px;
+            margin-top: 4px;
+            display: none;
+        }
+
+        /* Range Slider */
+        .slider-container {
+            margin-top: 10px;
+        }
+
+        .slider-val {
+            float: right;
+            font-weight: bold;
+            color: #ec7211;
+        }
+
+        input[type=range] {
+            width: 100%;
+            accent-color: #ec7211;
+            height: 4px;
+            background: #30363d;
+            border-radius: 2px;
+        }
+
+        /* Right Panel - Tabs */
+        .tab-header {
+            display: flex;
+            background: #161b22;
+            border-bottom: 1px solid #30363d;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            padding: 10px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #8b949e;
+            cursor: pointer;
+            border-right: 1px solid #30363d;
+            border-bottom: 2px solid transparent;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            background: #21262d;
+            color: white;
+        }
+
+        .tab-btn.active {
+            color: #ec7211;
+            border-bottom-color: #ec7211;
+            background: #0d1117;
+        }
+
+        /* Topology Visualizer */
+        .topo-vpc {
+            border: 2px dashed #30363d;
+            padding: 20px;
+            border-radius: 8px;
+            position: relative;
+            margin-top: 10px;
+        }
+
+        .topo-label {
+            position: absolute;
+            top: -10px;
+            left: 10px;
+            background: #0d1117;
+            padding: 0 5px;
+            font-size: 10px;
+            color: #8b949e;
+            font-weight: bold;
+        }
+
+        .topo-az-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .topo-az {
+            border: 1px dashed #58a6ff;
+            padding: 10px;
+            border-radius: 6px;
+            background: rgba(88, 166, 255, 0.05);
+            position: relative;
+        }
+
+        .topo-az-label {
+            position: absolute;
+            top: -8px;
+            right: 10px;
+            font-size: 9px;
+            color: #58a6ff;
+            background: #0d1117;
+            padding: 0 4px;
+        }
+
+        .topo-subnet {
+            background: #161b22;
+            border: 1px solid #30363d;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 10px;
+        }
+
+        .topo-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
+
+        /* Animation */
+        @keyframes pulse {
+            0% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .highlight-change {
+            animation: flashText 0.5s;
+            color: #ec7211 !important;
+            font-weight: bold;
+        }
+
+        @keyframes flashText {
+            0% {
+                color: #fff;
+                background: #ec7211;
+            }
+
+            100% {
+                color: #ec7211;
+                background: transparent;
+            }
+        }
+    </style>
+</head>
+
+<body class="flex flex-col h-screen">
+
+    <header class="h-14 bg-[#161b22] border-b border-aws flex items-center justify-between px-6 shrink-0 z-50">
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 text-white font-bold text-lg tracking-tight">
+                <i data-lucide="cloud" class="w-6 h-6 text-[#ec7211]"></i>
+                AWS <span class="text-[#ec7211]">OMAKASE</span> PRO
+            </div>
+            <span class="px-2 py-0.5 rounded border border-gray-600 text-[10px] text-gray-400 font-mono">v4.0.0
+                Enterprise</span>
+        </div>
+        <div class="flex items-center gap-6 text-xs">
+            <div class="flex flex-col items-end">
+                <span class="text-gray-400">Target Region</span>
+                <select class="bg-transparent text-white font-bold outline-none cursor-pointer">
+                    <option value="ap-northeast-2">ap-northeast-2 (Seoul)</option>
+                    <option value="us-east-1">us-east-1 (N. Virginia)</option>
+                    <option value="ap-northeast-1">ap-northeast-1 (Tokyo)</option>
+                </select>
+            </div>
+            <div class="h-8 w-px bg-[#30363d]"></div>
+            <div class="flex flex-col items-end">
+                <span class="text-gray-400">Monthly Estimate</span>
+                <span class="font-bold text-green-400 text-sm font-mono" id="header-cost">$ 0.00</span>
+            </div>
+            <button onclick="deploy()"
+                class="bg-[#238636] hover:bg-[#2ea043] text-white px-4 py-2 rounded font-bold shadow-lg flex items-center gap-2 transition hover:scale-105">
+                <i data-lucide="play" class="w-3 h-3"></i> Provision Stack
+            </button>
+        </div>
+    </header>
+
+    <div class="grid-layout">
+
+        <div class="bg-[#0d1117] border-r border-aws overflow-y-auto p-5 custom-scrollbar">
+
+            <div class="option-group">
+                <div class="group-title"><i data-lucide="tag" class="w-3 h-3"></i> 1. Project Identity</div>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-[10px] text-gray-500 mb-1 block">SERVICE IDENTIFIER (ID)</label>
+                        <input type="text" id="svc_name" onkeyup="validateAndRefresh()"
+                            placeholder="e.g. core-payment-api" class="input-dark">
+                        <p id="err_name" class="err-msg">Lowercase alphanumeric only.</p>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-gray-500 mb-1 block">ENVIRONMENT</label>
+                        <select id="env_tag" onchange="refreshEngine()" class="input-dark">
+                            <option value="dev">Development (Dev)</option>
+                            <option value="stg">Staging (Stg)</option>
+                            <option value="prod">Production (Prd)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="option-group">
+                <div class="group-title"><i data-lucide="cpu" class="w-3 h-3"></i> 2. Compute Strategy</div>
+
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <div class="option-card flex-col items-center gap-2 py-3 active"
+                        onclick="setComputeType('ec2', this)">
+                        <i data-lucide="server" class="w-5 h-5 text-[#ec7211]"></i>
+                        <span class="text-xs font-bold text-white">EC2 (VM)</span>
+                        <div class="check-icon"><i data-lucide="check" class="w-3 h-3 text-white"></i></div>
+                    </div>
+                    <div class="option-card flex-col items-center gap-2 py-3" onclick="setComputeType('eks', this)">
+                        <i data-lucide="container" class="w-5 h-5 text-blue-400"></i>
+                        <span class="text-xs font-bold text-white">EKS (K8s)</span>
+                        <div class="check-icon"><i data-lucide="check" class="w-3 h-3 text-white"></i></div>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <div class="option-card active" onclick="setInstanceTier('t3.micro', 25, this)">
+                        <div class="flex-1">
+                            <div class="flex justify-between"><span class="text-xs font-bold text-white">Starter
+                                    (t3.micro)</span> <span class="text-[10px] text-green-400">$25</span></div>
+                            <div class="text-[9px] text-gray-500">2vCPU, 1GB RAM</div>
+                        </div>
+                        <div class="check-icon"><i data-lucide="check" class="w-3 h-3 text-white"></i></div>
+                    </div>
+                    <div class="option-card" onclick="setInstanceTier('m5.large', 90, this)">
+                        <div class="flex-1">
+                            <div class="flex justify-between"><span class="text-xs font-bold text-white">Standard
+                                    (m5.large)</span> <span class="text-[10px] text-green-400">$90</span></div>
+                            <div class="text-[9px] text-gray-500">2vCPU, 8GB RAM</div>
+                        </div>
+                        <div class="check-icon"><i data-lucide="check" class="w-3 h-3 text-white"></i></div>
+                    </div>
+                    <div class="option-card" onclick="setInstanceTier('c5.xlarge', 170, this)">
+                        <div class="flex-1">
+                            <div class="flex justify-between"><span class="text-xs font-bold text-white">Performance
+                                    (c5.xlarge)</span> <span class="text-[10px] text-green-400">$170</span></div>
+                            <div class="text-[9px] text-gray-500">4vCPU, 8GB RAM</div>
+                        </div>
+                        <div class="check-icon"><i data-lucide="check" class="w-3 h-3 text-white"></i></div>
+                    </div>
+                </div>
+
+                <div class="slider-container mt-4">
+                    <label class="text-[10px] text-gray-500 mb-1 block">SCALING LIMIT: <span id="node_val"
+                            class="slider-val">2 Nodes</span></label>
+                    <input type="range" id="node_count" min="1" max="20" value="2"
+                        oninput="updateSlider('node_val', this.value, ' Nodes'); refreshEngine()">
+                </div>
+            </div>
+
+            <div class="option-group">
+                <div class="group-title"><i data-lucide="database" class="w-3 h-3"></i> 3. Data Layer</div>
+                <select id="db_engine" onchange="refreshEngine()" class="input-dark mb-3">
+                    <option value="mysql">Amazon RDS for MySQL 8.0</option>
+                    <option value="postgres">Amazon RDS for PostgreSQL 15</option>
+                    <option value="aurora">Amazon Aurora (Serverless v2)</option>
+                    <option value="dynamodb">Amazon DynamoDB (On-Demand)</option>
+                </select>
+
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <div class="flex items-center gap-2 p-2 bg-[#161b22] rounded border border-[#30363d]">
+                        <input type="checkbox" id="chk_multiaz" checked onchange="refreshEngine()"
+                            class="accent-[#ec7211]">
+                        <span class="text-[10px] text-gray-300">Multi-AZ</span>
+                    </div>
+                    <div class="flex items-center gap-2 p-2 bg-[#161b22] rounded border border-[#30363d]">
+                        <input type="checkbox" id="chk_redis" onchange="refreshEngine()" class="accent-[#ec7211]">
+                        <span class="text-[10px] text-gray-300">Add Redis</span>
+                    </div>
+                </div>
+
+                <div class="slider-container">
+                    <label class="text-[10px] text-gray-500 mb-1 block">STORAGE: <span id="db_size_val"
+                            class="slider-val">50 GB</span></label>
+                    <input type="range" id="db_size" min="20" max="1000" step="10" value="50"
+                        oninput="updateSlider('db_size_val', this.value, ' GB'); refreshEngine()">
+                </div>
+            </div>
+
+            <div class="option-group">
+                <div class="group-title"><i data-lucide="shield" class="w-3 h-3"></i> 4. Security & Ops</div>
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between p-2 rounded hover:bg-[#161b22]">
+                        <span class="text-xs text-gray-400">WAF (Web Firewall)</span>
+                        <input type="checkbox" id="chk_waf" onchange="refreshEngine()" class="accent-[#ec7211]">
+                    </div>
+                    <div class="flex items-center justify-between p-2 rounded hover:bg-[#161b22]">
+                        <span class="text-xs text-gray-400">CloudFront CDN</span>
+                        <input type="checkbox" id="chk_cdn" onchange="refreshEngine()" class="accent-[#ec7211]">
+                    </div>
+                    <div class="flex items-center justify-between p-2 rounded hover:bg-[#161b22]">
+                        <span class="text-xs text-gray-400">S3 Backup (Retention)</span>
+                        <select id="backup_policy" onchange="refreshEngine()"
+                            class="bg-[#0d1117] border border-[#30363d] text-[10px] text-white rounded px-2 py-1 outline-none">
+                            <option value="7">7 Days</option>
+                            <option value="30">30 Days</option>
+                            <option value="90">90 Days</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="bg-[#161b22] flex flex-col min-w-0">
+
+            <div class="tab-header">
+                <div class="tab-btn active" onclick="switchTab('topology')"><i data-lucide="map" class="w-3 h-3"></i>
+                    Topology Map</div>
+                <div class="tab-btn" onclick="switchTab('terraform')"><i data-lucide="code-2" class="w-3 h-3"></i>
+                    Terraform (IaC)</div>
+                <div class="tab-btn" onclick="switchTab('cfn')"><i data-lucide="file-json" class="w-3 h-3"></i>
+                    CloudFormation</div>
+                <div class="tab-btn" onclick="switchTab('iam')"><i data-lucide="key" class="w-3 h-3"></i> IAM & Policy
+                </div>
+                <div class="tab-btn" onclick="switchTab('cost')"><i data-lucide="dollar-sign" class="w-3 h-3"></i> Cost
+                    Analysis</div>
+            </div>
+
+            <div class="flex-1 p-6 overflow-y-auto custom-scrollbar">
+
+                <div id="tab-topology" class="tab-pane fade-in">
+                    <div class="bg-[#0d1117] border border-aws rounded-lg p-6 min-h-[400px]">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase mb-6 flex justify-between">
+                            <span>Generated Architecture Diagram</span>
+                            <span class="text-[#ec7211] flex items-center gap-1"><i data-lucide="refresh-cw"
+                                    class="w-3 h-3"></i> Live Preview</span>
+                        </h3>
+
+                        <div class="flex justify-center mb-6">
+                            <div class="flex flex-col items-center gap-1">
+                                <div
+                                    class="w-12 h-12 bg-[#ec7211]/10 border border-[#ec7211] rounded flex items-center justify-center">
+                                    <i data-lucide="globe" class="w-6 h-6 text-[#ec7211]"></i>
+                                </div>
+                                <span class="text-[10px] text-gray-500">Internet Gateway</span>
+                            </div>
+                        </div>
+
+                        <div class="topo-vpc">
+                            <div class="topo-label">AWS Cloud (VPC: 10.0.0.0/16)</div>
+
+                            <div class="flex justify-center mb-4" id="topo-lb-layer">
+                            </div>
+
+                            <div class="topo-az-container" id="topo-az-container">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-4 gap-4 mt-4">
+                        <div class="p-3 bg-[#161b22] border border-aws rounded">
+                            <div class="text-[10px] text-gray-500">Total vCPU</div>
+                            <div class="text-sm font-bold text-white" id="stat-vcpu">0 Core</div>
+                        </div>
+                        <div class="p-3 bg-[#161b22] border border-aws rounded">
+                            <div class="text-[10px] text-gray-500">Total RAM</div>
+                            <div class="text-sm font-bold text-white" id="stat-ram">0 GB</div>
+                        </div>
+                        <div class="p-3 bg-[#161b22] border border-aws rounded">
+                            <div class="text-[10px] text-gray-500">Storage</div>
+                            <div class="text-sm font-bold text-white" id="stat-storage">0 GB</div>
+                        </div>
+                        <div class="p-3 bg-[#161b22] border border-aws rounded">
+                            <div class="text-[10px] text-gray-500">High Availability</div>
+                            <div class="text-sm font-bold text-green-400" id="stat-ha">Enabled</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-terraform" class="tab-pane hidden h-full">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-sm font-bold text-[#ec7211]">main.tf</h3>
+                        <div class="flex gap-2">
+                            <span class="text-[10px] bg-gray-800 px-2 py-1 rounded text-gray-300 font-mono">HCL
+                                v1.5</span>
+                            <button
+                                class="text-[10px] bg-[#21262d] border border-aws px-2 py-1 rounded hover:text-white"
+                                onclick="copyToClipboard('code-tf')">Copy</button>
+                        </div>
+                    </div>
+                    <pre
+                        class="h-full bg-[#0d1117] p-4 rounded border border-aws custom-scrollbar"><code class="language-hcl" id="code-tf"></code></pre>
+                </div>
+
+                <div id="tab-cfn" class="tab-pane hidden h-full">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-sm font-bold text-[#ec7211]">stack.json</h3>
+                        <span class="text-[10px] bg-gray-800 px-2 py-1 rounded text-gray-300 font-mono">JSON</span>
+                    </div>
+                    <pre
+                        class="h-full bg-[#0d1117] p-4 rounded border border-aws custom-scrollbar"><code class="language-json" id="code-cfn"></code></pre>
+                </div>
+
+                <div id="tab-iam" class="tab-pane hidden">
+                    <div class="bg-[#0d1117] border border-aws rounded-lg p-4 mb-6">
+                        <h3 class="text-sm font-bold text-white mb-4 border-b border-[#30363d] pb-2">IAM Role & Trust
+                            Relationships</h3>
+                        <pre><code class="language-json rounded text-xs" id="code-iam"></code></pre>
+                    </div>
+                    <div class="bg-[#0d1117] border border-aws rounded-lg p-4">
+                        <h3 class="text-sm font-bold text-white mb-4 border-b border-[#30363d] pb-2">Security Group
+                            Rules</h3>
+                        <table class="param-table">
+                            <thead>
+                                <tr class="text-left text-gray-500">
+                                    <th>Rule ID</th>
+                                    <th>Protocol</th>
+                                    <th>Port</th>
+                                    <th>Source</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sg-rules-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="tab-cost" class="tab-pane hidden">
+                    <div class="bg-[#0d1117] border border-aws rounded-lg p-5">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase mb-4">Detailed Bill Estimation</h3>
+                        <table class="w-full text-xs text-gray-300">
+                            <thead class="border-b border-[#30363d] text-left text-gray-500">
+                                <tr>
+                                    <th class="pb-2">Resource</th>
+                                    <th class="pb-2">Spec</th>
+                                    <th class="pb-2 text-right">Unit Price</th>
+                                    <th class="pb-2 text-right">Quantity</th>
+                                    <th class="pb-2 text-right">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cost-detail-body"></tbody>
+                            <tfoot class="border-t border-[#30363d] font-bold text-white">
+                                <tr>
+                                    <td class="pt-4" colspan="4">Estimated Monthly Total</td>
+                                    <td class="pt-4 text-right text-green-400 text-xl" id="cost-total-display">$ 0.00
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                        <p class="text-[10px] text-gray-500 mt-4">* Estimates are based on on-demand pricing in
+                            ap-northeast-2. Data transfer fees not included.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="terminal-overlay"
+            class="hidden absolute inset-0 bg-black/90 backdrop-blur-sm z-[100] flex items-center justify-center">
+            <div
+                class="w-[900px] h-[600px] bg-[#0d1117] border border-aws rounded-xl shadow-2xl flex flex-col font-mono text-xs overflow-hidden">
+                <div class="h-9 bg-[#161b22] border-b border-aws flex items-center px-4 justify-between">
+                    <div class="flex gap-2">
+                        <div class="w-3 h-3 rounded-full bg-red-500 hover:bg-red-600 cursor-pointer"
+                            onclick="closeTerminal()"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                    </div>
+                    <div class="text-gray-400">aws-omakase-cli — deploy — 80x24</div>
+                    <div class="w-4"></div>
+                </div>
+                <div class="flex-1 p-6 overflow-y-auto custom-scrollbar text-gray-300 space-y-1" id="console-output">
+                </div>
+                <div class="p-4 border-t border-aws bg-[#161b22] hidden flex justify-between items-center"
+                    id="deploy-footer">
+                    <div class="flex items-center gap-2 text-green-400 font-bold">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i> Provisioning Success
+                    </div>
+                    <button onclick="location.href='/monitoring'"
+                        class="bg-[#238636] hover:bg-[#2ea043] text-white px-6 py-2 rounded font-bold transition">
+                        View Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // --- 1. Global State ---
+        let state = {
+            computeMode: 'ec2', // ec2 | eks
+            instanceType: 't3.micro',
+            instanceCost: 25,
+            instanceCPU: 2,
+            instanceRAM: 1,
+            nodeCount: 2,
+
+            dbEngine: 'mysql',
+            dbMultiAZ: true,
+            dbSize: 50,
+            redis: false,
+
+            waf: false,
+            cdn: false,
+            backupDays: 7
+        };
+
+        // --- 2. Logic Functions ---
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+
+        function validateAndRefresh() {
+            const name = document.getElementById('svc_name').value;
+            const err = document.getElementById('err_name');
+            const regex = /^[a-z0-9-]+$/;
+
+            if (name && !regex.test(name)) {
+                err.style.display = 'block';
+                document.getElementById('svc_name').classList.add('input-error');
+            } else {
+                err.style.display = 'none';
+                document.getElementById('svc_name').classList.remove('input-error');
+                refreshEngine();
+            }
+        }
+
+        function setComputeType(type, el) {
+            state.computeMode = type;
+            updateSelection(el);
+        }
+
+        function setInstanceTier(type, cost, el) {
+            state.instanceType = type;
+            state.instanceCost = cost;
+            // Update CPU/RAM specs based on type
+            if (type === 't3.micro') { state.instanceCPU = 2; state.instanceRAM = 1; }
+            else if (type === 'm5.large') { state.instanceCPU = 2; state.instanceRAM = 8; }
+            else { state.instanceCPU = 4; state.instanceRAM = 8; }
+            updateSelection(el);
+        }
+
+        function updateSelection(el) {
+            const siblings = el.parentElement.children;
+            for (let sib of siblings) sib.classList.remove('active');
+            el.classList.add('active');
+            refreshEngine();
+        }
+
+        function updateSlider(id, val, suffix) {
+            document.getElementById(id).innerText = val + suffix;
+        }
+
+        function copyToClipboard(id) {
+            const text = document.getElementById(id).innerText;
+            navigator.clipboard.writeText(text).then(() => alert('Code copied to clipboard!'));
+        }
+
+        // --- 3. The Core Engine (Generates Everything) ---
+        function refreshEngine() {
+            // A. Sync State from UI Inputs
+            state.nodeCount = parseInt(document.getElementById('node_count').value);
+            state.dbEngine = document.getElementById('db_engine').value;
+            state.dbMultiAZ = document.getElementById('chk_multiaz').checked;
+            state.redis = document.getElementById('chk_redis').checked;
+            state.dbSize = parseInt(document.getElementById('db_size').value);
+            state.waf = document.getElementById('chk_waf').checked;
+            state.cdn = document.getElementById('chk_cdn').checked;
+            state.backupDays = parseInt(document.getElementById('backup_policy').value);
+
+            const svcName = document.getElementById('svc_name').value || 'example-app';
+            const env = document.getElementById('env_tag').value;
+            const randId = Math.random().toString(36).substring(7);
+
+            // B. Calculate Costs (Detailed)
+            const computeTotal = state.instanceCost * state.nodeCount;
+            const dbBase = state.dbEngine === 'aurora' ? 100 : (state.instanceType === 't3.micro' ? 15 : 50);
+            const dbStorageCost = state.dbSize * 0.12;
+            const dbTotal = (dbBase + dbStorageCost) * (state.dbMultiAZ ? 2 : 1);
+            const redisCost = state.redis ? 40 : 0;
+            const wafCost = state.waf ? 30 : 0;
+            const cdnCost = state.cdn ? 20 : 0;
+            const totalMonthly = computeTotal + dbTotal + redisCost + wafCost + cdnCost;
+
+            document.getElementById('header-cost').innerText = `$ ${totalMonthly.toFixed(2)}`;
+            document.getElementById('cost-total-display').innerText = `$ ${totalMonthly.toFixed(2)}`;
+
+            // Render Cost Table
+            const costBody = document.getElementById('cost-detail-body');
+            costBody.innerHTML = `
+                <tr><td>Compute (${state.computeMode.toUpperCase()})</td><td>${state.instanceType} x ${state.nodeCount}</td><td class="text-right">$${state.instanceCost}</td><td class="text-right">${state.nodeCount}</td><td class="text-right">$${computeTotal}</td></tr>
+                <tr><td>Database</td><td>${state.dbEngine} ${state.dbMultiAZ ? '(Multi-AZ)' : ''}</td><td class="text-right">$${dbBase}</td><td class="text-right">${state.dbMultiAZ ? 2 : 1}</td><td class="text-right">$${dbTotal.toFixed(2)}</td></tr>
+                ${state.redis ? `<tr><td>ElastiCache</td><td>Redis Cluster</td><td class="text-right">$40</td><td class="text-right">1</td><td class="text-right">$40</td></tr>` : ''}
+                ${state.waf ? `<tr><td>Security</td><td>AWS WAF ACL</td><td class="text-right">$30</td><td class="text-right">1</td><td class="text-right">$30</td></tr>` : ''}
+                ${state.cdn ? `<tr><td>Networking</td><td>CloudFront CDN</td><td class="text-right">$20</td><td class="text-right">1</td><td class="text-right">$20</td></tr>` : ''}
+            `;
+
+            // C. Render Topology (Visual Map)
+            renderTopology(svcName);
+
+            // D. Generate Terraform (HCL) - Massive String Construction
+            const tfContent = generateTerraform(svcName, env, randId);
+            const tfEl = document.getElementById('code-tf');
+            tfEl.textContent = tfContent;
+            tfEl.removeAttribute('data-highlighted');
+            hljs.highlightElement(tfEl);
+
+            // E. Generate CloudFormation (JSON)
+            const cfnContent = generateCloudFormation(svcName);
+            const cfnEl = document.getElementById('code-cfn');
+            cfnEl.textContent = JSON.stringify(cfnContent, null, 2);
+            cfnEl.removeAttribute('data-highlighted');
+            hljs.highlightElement(cfnEl);
+
+            // F. Generate IAM Policy
+            const iamContent = {
+                "Version": "2012-10-17",
+                "Statement": [
+                    { "Effect": "Allow", "Action": ["s3:*"], "Resource": [`arn:aws:s3:::${svcName}-assets/*`] },
+                    { "Effect": "Allow", "Action": ["kms:Decrypt"], "Resource": "*" }
+                ]
+            };
+            const iamEl = document.getElementById('code-iam');
+            iamEl.textContent = JSON.stringify(iamContent, null, 2);
+            hljs.highlightElement(iamEl);
+
+            // G. Security Rules Table
+            const sgBody = document.getElementById('sg-rules-body');
+            sgBody.innerHTML = `
+                <tr><td>sg-alb-inbound</td><td class="text-[#ec7211]">TCP</td><td>80, 443</td><td>0.0.0.0/0 (Anywhere)</td></tr>
+                <tr><td>sg-app-from-alb</td><td class="text-[#ec7211]">TCP</td><td>8080</td><td>sg-alb-inbound</td></tr>
+                <tr><td>sg-db-from-app</td><td class="text-[#ec7211]">TCP</td><td>3306</td><td>sg-app-from-alb</td></tr>
+            `;
+
+            // H. Update Stats
+            document.getElementById('stat-vcpu').innerText = `${state.instanceCPU * state.nodeCount} vCPUs`;
+            document.getElementById('stat-ram').innerText = `${state.instanceRAM * state.nodeCount} GB`;
+            document.getElementById('stat-storage').innerText = `${state.dbSize} GB`;
+            document.getElementById('stat-ha').innerText = state.dbMultiAZ ? "Enabled (2 AZs)" : "Disabled (1 AZ)";
+            document.getElementById('stat-ha').className = state.dbMultiAZ ? "text-sm font-bold text-green-400" : "text-sm font-bold text-yellow-500";
+        }
+
+        // --- 4. Topology Renderer (CSS Grid Magic) ---
+        function renderTopology(svcName) {
+            // LB Layer
+            const lbHtml = `
+                <div class="topo-subnet w-full justify-center bg-[#1f242c] border-dashed">
+                    <div class="topo-icon bg-green-500/20 text-green-500"><i data-lucide="layers" class="w-3 h-3"></i></div>
+                    <span>Application Load Balancer (${svcName}-alb)</span>
+                </div>
+            `;
+            document.getElementById('topo-lb-layer').innerHTML = lbHtml;
+
+            // AZs
+            const azCount = state.dbMultiAZ ? 2 : 1;
+            let azHtml = '';
+
+            for (let i = 0; i < azCount; i++) {
+                const zone = i === 0 ? 'a' : 'c';
+                const nodeCount = Math.ceil(state.nodeCount / azCount);
+
+                // Compute Nodes Visualization
+                let nodesHtml = '';
+                for (let j = 0; j < nodeCount; j++) {
+                    nodesHtml += `
+                        <div class="topo-subnet">
+                            <div class="topo-icon bg-[#ec7211]/20 text-[#ec7211]"><i data-lucide="${state.computeMode === 'eks' ? 'container' : 'cpu'}" class="w-3 h-3"></i></div>
+                            <span>${state.computeMode.toUpperCase()} Node 0${j + 1}</span>
+                        </div>
+                    `;
+                }
+
+                azHtml += `
+                    <div class="topo-az">
+                        <div class="topo-az-label">ap-northeast-2${zone}</div>
+                        <div class="mb-2 text-[9px] text-gray-500 font-bold uppercase">Public Subnet</div>
+                        <div class="topo-subnet border-green-900/50">
+                            <div class="topo-icon bg-green-500/20 text-green-500"><i data-lucide="network" class="w-3 h-3"></i></div>
+                            <span>NAT Gateway</span>
+                        </div>
+                        
+                        <div class="mt-4 mb-2 text-[9px] text-gray-500 font-bold uppercase">Private App Subnet</div>
+                        ${nodesHtml}
+
+                        <div class="mt-4 mb-2 text-[9px] text-gray-500 font-bold uppercase">Database Subnet</div>
+                        <div class="topo-subnet border-blue-900/50">
+                            <div class="topo-icon bg-blue-500/20 text-blue-500"><i data-lucide="database" class="w-3 h-3"></i></div>
+                            <span>${state.dbEngine} ${i === 0 ? 'Primary' : 'Standby'}</span>
+                        </div>
+                    </div>
+                `;
+            }
+            document.getElementById('topo-az-container').innerHTML = azHtml;
+            lucide.createIcons();
+        }
+
+        // --- 5. Code Generators (Deep Logic) ---
+        function generateTerraform(name, env, id) {
+            return `# AWS Omakase Generated Config
+# Service: ${name}
+# Env: ${env}
+
+terraform {
+  required_providers {
+    aws = { source = "hashicorp/aws", version = "~> 5.0" }
+  }
+}
+
+provider "aws" {
+  region = "ap-northeast-2"
+}
+
+# 1. VPC Module
+resource "aws_vpc" "main" {
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_hostnames = true
+  tags = { Name = "${name}-vpc" }
+}
+
+# 2. Compute Layer (${state.computeMode.toUpperCase()})
+resource "aws_launch_template" "app" {
+  name_prefix   = "${name}-tpl"
+  image_id      = "ami-0c9c942bd7bf113a2"
+  instance_type = "${state.instanceType}"
+  user_data     = base64encode(file("init.sh"))
+  
+  iam_instance_profile { name = aws_iam_instance_profile.ec2_profile.name }
+}
+
+resource "aws_autoscaling_group" "asg" {
+  desired_capacity    = ${state.nodeCount}
+  max_size            = ${state.nodeCount * 2}
+  min_size            = 1
+  vpc_zone_identifier = aws_subnet.private[*].id
+  target_group_arns   = [aws_lb_target_group.app.arn]
+  
+  launch_template {
+    id      = aws_launch_template.app.id
+    version = "$Latest"
+  }
+}
+
+# 3. Database Layer
+resource "aws_db_instance" "default" {
+  identifier        = "${name}-db"
+  allocated_storage = ${state.dbSize}
+  engine            = "${state.dbEngine}"
+  instance_class    = "${state.instanceType === 't3.micro' ? 'db.t3.micro' : 'db.m5.large'}"
+  multi_az          = ${state.dbMultiAZ}
+  storage_encrypted = true
+}
+
+${state.redis ? `# 4. Cache Layer
+resource "aws_elasticache_cluster" "redis" {
+  cluster_id      = "${name}-redis"
+  engine          = "redis"
+  node_type       = "cache.t3.micro"
+  num_cache_nodes = 1
+}` : ''}
+
+${state.cdn ? `# 5. CDN
+resource "aws_cloudfront_distribution" "s3_dist" {
+  origin {
+    domain_name = aws_s3_bucket.static.bucket_regional_domain_name
+    origin_id   = "S3-${name}"
+  }
+  enabled = true
+}` : ''}
+`;
+        }
+
+        function generateCloudFormation(name) {
+            return {
+                "AWSTemplateFormatVersion": "2010-09-09",
+                "Description": `Stack for ${name}`,
+                "Resources": {
+                    "VPC": { "Type": "AWS::EC2::VPC", "Properties": { "CidrBlock": "10.0.0.0/16" } },
+                    "ASG": {
+                        "Type": "AWS::AutoScaling::AutoScalingGroup",
+                        "Properties": {
+                            "MinSize": "1",
+                            "MaxSize": String(state.nodeCount * 2),
+                            "DesiredCapacity": String(state.nodeCount)
+                        }
+                    },
+                    "DB": {
+                        "Type": "AWS::RDS::DBInstance",
+                        "Properties": {
+                            "Engine": state.dbEngine,
+                            "AllocatedStorage": String(state.dbSize),
+                            "MultiAZ": state.dbMultiAZ
+                        }
+                    }
+                }
+            };
+        }
+
+        // --- 6. Deployment Simulation ---
+        function deploy() {
+            const svcName = document.getElementById('svc_name').value || 'demo';
+            document.getElementById('terminal-overlay').classList.remove('hidden');
+            const consoleDiv = document.getElementById('console-output');
+            consoleDiv.innerHTML = '';
+
+            const steps = [
+                `[CLI] Initializing AWS Omakase Engine v4.0...`,
+                `[AUTH] Validating AWS Credentials... OK`,
+                `[PLAN] Calculating Resource Graph...`,
+                `-------------------------------------------------------`,
+                `[VPC] Creating VPC 'vpc-${svcName}' (10.0.0.0/16)...`,
+                `[Subnet] Creating Public/Private Subnets across 2 AZs...`,
+                `[IGW] Attaching Internet Gateway... DONE`,
+                `[NAT] Provisioning NAT Gateway for Private Subnets... DONE`,
+                `[SG] Creating Security Groups (Web, App, DB)... DONE`,
+                `[IAM] Creating Instance Roles & Policies... DONE`,
+                `[DB] Launching ${state.dbEngine} Instance (${state.dbMultiAZ ? 'Multi-AZ' : 'Single-AZ'})...`,
+                `[DB] Waiting for DB available status... (this may take time)`,
+                `[ASG] Creating Launch Template with UserData...`,
+                `[ASG] Spinning up ${state.nodeCount} x ${state.computeMode.toUpperCase()} Nodes...`,
+                `[ALB] Provisioning Application Load Balancer...`,
+                `[ALB] Registering Targets... HEALTHY`,
+            ];
+
+            if (state.redis) steps.push(`[Redis] Launching ElastiCache Cluster... DONE`);
+            if (state.cdn) steps.push(`[CDN] Deploying CloudFront Distribution... (InProgress)`);
+            if (state.waf) steps.push(`[WAF] Attaching Web ACL rules... DONE`);
+
+            steps.push(`-------------------------------------------------------`);
+            steps.push(`[OUTPUT] Service URL: http://${svcName}-alb-12345.ap-northeast-2.elb.amazonaws.com`);
+            steps.push(`[SUCCESS] Stack Provisioning Complete.`);
+
+            let i = 0;
+            function printLog() {
+                if (i >= steps.length) {
+                    document.getElementById('deploy-footer').classList.remove('hidden');
+                    document.getElementById('deploy-footer').classList.add('flex');
+                    return;
+                }
+                const div = document.createElement('div');
+                div.className = steps[i].includes('[SUCCESS]') ? "text-green-400 font-bold mt-4" : "text-gray-300 mb-1";
+                div.innerText = `> ${steps[i]}`;
+                consoleDiv.appendChild(div);
+                consoleDiv.scrollTop = consoleDiv.scrollHeight;
+                i++;
+                setTimeout(printLog, 400 + Math.random() * 500);
+            }
+            printLog();
+
+            // Fire Backend Request
+            try {
+                fetch('/api/provision', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ serviceName: svcName, config: state, targetInfra: {} })
+                });
+            } catch (e) { }
+        }
+
+        function closeTerminal() { document.getElementById('terminal-overlay').classList.add('hidden'); }
+
+        // Init
+        refreshEngine();
+    </script>
+</body>
+
+</html>

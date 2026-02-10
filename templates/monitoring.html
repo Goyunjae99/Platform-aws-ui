@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>H-CMP | Resource Monitoring</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #f2f3f3;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .flex {
+            display: flex;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* AWS Colors & Utilities */
+        .aws-header-bg {
+            background-color: #232f3e;
+        }
+
+        .aws-dark-text {
+            color: #16191f;
+        }
+
+        .aws-orange-bg {
+            background-color: #ec7211;
+        }
+
+        .aws-btn {
+            background-color: #ec7211;
+            color: #ffffff;
+            font-weight: 700;
+            transition: all 0.2s;
+            border: 1px solid #ec7211;
+        }
+
+        .aws-btn:hover {
+            background-color: #eb5f07;
+            border-color: #dd5906;
+        }
+
+        /* Sidebar Item */
+        .nav-item:hover {
+            color: #ec7211;
+        }
+
+        /* CloudWatch Card Style */
+        .cw-card {
+            background: white;
+            border: 1px solid #d5dbdb;
+            border-radius: 4px;
+            padding: 16px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            transition: box-shadow 0.2s;
+        }
+
+        .cw-card:hover {
+            border-color: #ec7211;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .cw-metric-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #545b64;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .cw-metric-value {
+            font-size: 20px;
+            font-weight: 800;
+            color: #16191f;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen text-[#16191f] flex flex-col">
+
+    <header class="bg-[#232f3e] text-white px-6 py-3 flex justify-between items-center shadow-md z-40 shrink-0">
+        <div class="flex items-center gap-3">
+            <button onclick="location.href='/'" class="hover:text-[#ec7211] transition"><i data-lucide="box"
+                    class="w-6 h-6 text-[#ec7211]"></i></button>
+            <h1 class="text-base font-bold tracking-tight">Management Console <span
+                    class="text-gray-400 font-normal mx-2">/</span> CloudWatch</h1>
+        </div>
+        <div class="flex items-center gap-4 text-sm">
+            <div
+                class="flex items-center gap-2 text-xs font-bold text-[#ec7211] bg-[#232f3e] px-3 py-1 rounded border border-gray-600">
+                <span class="relative flex h-2 w-2"><span
+                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ec7211] opacity-75"></span><span
+                        class="relative inline-flex rounded-full h-2 w-2 bg-[#ec7211]"></span></span>
+                Live (5s)
+            </div>
+            <div class="h-4 w-px bg-gray-600"></div>
+            <a href="/" class="hover:text-[#ec7211] font-bold">Back to Console</a>
+        </div>
+    </header>
+
+    <div class="flex-1 flex flex-col lg:flex-row overflow-hidden bg-[#f2f3f3]">
+        <nav
+            class="w-full lg:w-16 bg-[#232f3e] flex lg:flex-col items-center py-4 gap-6 border-t border-gray-700 shrink-0">
+            <i onclick="location.href='/'" data-lucide="home"
+                class="w-5 h-5 text-gray-400 hover:text-[#ec7211] cursor-pointer hover:scale-110 transition"
+                title="Home"></i>
+            <i onclick="location.reload()" data-lucide="activity"
+                class="w-5 h-5 text-[#ec7211] cursor-pointer hover:scale-110 transition" title="Monitoring"></i>
+            <i onclick="location.href='/history'" data-lucide="list"
+                class="w-5 h-5 text-gray-400 hover:text-[#ec7211] cursor-pointer hover:scale-110 transition"
+                title="History"></i>
+            <i onclick="openSettingsModal()" data-lucide="settings"
+                class="w-5 h-5 text-gray-400 hover:text-[#ec7211] cursor-pointer hover:scale-110 transition mt-auto"
+                title="Settings"></i>
+        </nav>
+
+        <main class="flex-1 p-6 overflow-y-auto">
+            <div class="max-w-7xl mx-auto space-y-6 pb-20">
+                <div class="flex justify-between items-end border-b border-[#d5dbdb] pb-4">
+                    <div>
+                        <h1 class="text-xl font-bold text-[#16191f]">Dashboards <span
+                                class="text-gray-400 font-normal mx-2">/</span> VM Metrics</h1>
+                        <p class="text-xs text-[#545b64] mt-1">Real-time performance monitoring for allocated resources.
+                        </p>
+                    </div>
+                    <button onclick="fetchResources()"
+                        class="bg-white border border-[#d5dbdb] px-3 py-1.5 rounded text-xs font-bold hover:border-[#ec7211] text-[#545b64] flex items-center gap-2 transition hover:text-[#ec7211]">
+                        <i data-lucide="refresh-cw" class="w-3 h-3"></i> Sync now
+                    </button>
+                </div>
+
+                <div id="vm-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="settings-modal"
+        class="hidden fixed inset-0 z-[100] flex items-center justify-center px-4 bg-[#232f3e]/50 backdrop-blur-sm fade-in">
+        <div class="bg-white w-full max-w-md rounded-md shadow-2xl overflow-hidden relative">
+            <div class="bg-[#f2f3f3] px-6 py-4 border-b border-[#d5dbdb] flex justify-between items-center">
+                <h3 class="font-bold text-[#16191f] text-sm">Preferences</h3>
+                <button onclick="closeSettingsModal()" class="text-[#545b64] hover:text-[#16191f]"><i data-lucide="x"
+                        class="w-4 h-4"></i></button>
+            </div>
+            <div class="p-6 space-y-6">
+                <div>
+                    <label class="block text-xs font-bold text-[#545b64] mb-1">API Endpoint</label>
+                    <input type="text"
+                        class="w-full border border-[#d5dbdb] rounded p-2 text-sm bg-gray-50 from-gray-50"
+                        value="https://api.omakase.internal/v1" readonly>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-[#545b64] mb-1">Region</label>
+                    <select class="w-full border border-[#d5dbdb] rounded p-2 text-sm bg-white">
+                        <option value="ap-northeast-2" selected>Asia Pacific (Seoul)</option>
+                        <option value="us-east-1">US East (N. Virginia)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="bg-[#f8f9fa] px-6 py-4 flex justify-end gap-3 border-t border-[#d5dbdb]">
+                <button onclick="closeSettingsModal()"
+                    class="bg-white border border-[#545b64] text-[#545b64] px-4 py-1.5 rounded text-sm font-bold hover:bg-gray-50">Cancel</button>
+                <button onclick="saveSettings()"
+                    class="bg-[#ec7211] text-white px-4 py-1.5 rounded text-sm font-bold hover:bg-[#eb5f07]">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Chart Registry
+        const chartRegistry = {};
+
+        function openSettingsModal() { document.getElementById('settings-modal').classList.remove('hidden'); }
+        function closeSettingsModal() { document.getElementById('settings-modal').classList.add('hidden'); }
+        function saveSettings() { closeSettingsModal(); alert("Settings saved."); }
+
+        async function fetchResources() {
+            try {
+                const res = await fetch('/api/monitoring/my-resources');
+                const data = await res.json();
+                renderCards(data);
+            } catch (e) {
+                console.error("Fetch failed", e);
+            }
+        }
+
+        // Render Logic (Diff Algo)
+        function renderCards(vms) {
+            const grid = document.getElementById('vm-grid');
+
+            if (vms.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-20 text-gray-400 text-sm">No active instances found in CloudWatch.</div>`;
+                Object.keys(chartRegistry).forEach(key => {
+                    if (chartRegistry[key].cpu) chartRegistry[key].cpu.destroy();
+                    if (chartRegistry[key].mem) chartRegistry[key].mem.destroy();
+                    delete chartRegistry[key];
+                });
+                return;
+            }
+
+            // Garbage Collection
+            const currentVmNames = new Set(vms.map(vm => vm.vm_name));
+            Object.keys(chartRegistry).forEach(vmName => {
+                if (!currentVmNames.has(vmName)) {
+                    chartRegistry[vmName].cpu.destroy();
+                    chartRegistry[vmName].mem.destroy();
+                    delete chartRegistry[vmName];
+                    const card = document.getElementById(`card-${vmName}`);
+                    if (card) card.remove();
+                }
+            });
+
+            // Update or Create
+            vms.forEach((vm) => {
+                const safeName = vm.vm_name.replace(/\s+/g, '-');
+                const cardId = `card-${vm.vm_name}`;
+
+                if (chartRegistry[vm.vm_name]) { // Update
+                    updateCard(vm, safeName);
+                } else { // Create
+                    createCard(grid, vm, safeName, cardId);
+                }
+            });
+
+            lucide.createIcons();
+        }
+
+        function createCard(grid, vm, safeName, cardId) {
+            const card = document.createElement('div');
+            card.id = cardId;
+            card.className = "cw-card fade-in";
+            // AWS Style Card UI
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-4 border-b border-gray-100 pb-2">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold text-[#545b64] border border-[#d5dbdb] px-1.5 py-0.5 rounded bg-gray-50">${vm.project_name}</span>
+                        </div>
+                        <h3 class="text-sm font-bold text-[#ec7211] mt-1 flex items-center gap-1">
+                            <i data-lucide="server" class="w-3 h-3"></i> ${vm.vm_name}
+                        </h3>
+                        <p class="text-[10px] text-[#545b64] font-mono mt-0.5">${vm.ip_address}</p>
+                    </div>
+                   <div class="bg-green-50 text-green-700 p-1.5 rounded"><i data-lucide="activity" class="w-4 h-4"></i></div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="text-center relative">
+                        <canvas id="cpu-chart-${safeName}" height="100"></canvas>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-4">
+                            <p class="cw-metric-label">CPU</p>
+                            <p id="cpu-text-${safeName}" class="cw-metric-value">${vm.cpu_usage}%</p>
+                        </div>
+                    </div>
+                    <div class="text-center relative">
+                        <canvas id="mem-chart-${safeName}" height="100"></canvas>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-4">
+                            <p class="cw-metric-label">MEM</p>
+                            <p id="mem-text-${safeName}" class="cw-metric-value">${vm.memory_usage}%</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
+
+            // Chart Init (AWS Colors: CPU=Orange, Mem=Blue)
+            chartRegistry[vm.vm_name] = {
+                cpu: drawChart(`cpu-chart-${safeName}`, vm.cpu_usage, '#ec7211'),
+                mem: drawChart(`mem-chart-${safeName}`, vm.memory_usage, '#3b48cc') // Requested Blue
+            };
+        }
+
+        function updateCard(vm, safeName) {
+            document.getElementById(`cpu-text-${safeName}`).innerText = `${vm.cpu_usage}%`;
+            document.getElementById(`mem-text-${safeName}`).innerText = `${vm.memory_usage}%`;
+
+            const charts = chartRegistry[vm.vm_name];
+            charts.cpu.data.datasets[0].data = [vm.cpu_usage, 100 - vm.cpu_usage];
+            charts.cpu.update();
+
+            charts.mem.data.datasets[0].data = [vm.memory_usage, 100 - vm.memory_usage];
+            charts.mem.update();
+        }
+
+        function drawChart(canvasId, value, color) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            return new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Used', 'Free'],
+                    datasets: [{
+                        data: [value, 100 - value],
+                        backgroundColor: [color, '#eaeded'], // AWS gray for empty
+                        borderWidth: 0,
+                        cutout: '85%', // Thinner ring for modern look
+                        borderRadius: 20
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    animation: { duration: 0 }
+                }
+            });
+        }
+
+        fetchResources();
+        setInterval(fetchResources, 5000);
+    </script>
+</body>
+
+</html>
